@@ -34,7 +34,7 @@ For BYOL, I have only tested a simple set of hyper-parameters: using a fixed mom
 
 #### Embedding Visualization
 <img src="img/EmbeddingInsDisR18T20.png" width = "300" height="300" alt="BYOL loss curve" align=center />
-<img src="img/EmbeddingBYOLR18.png" width = "300" height="300" alt="BYOL loss curve" align=center />
+<img src="img/EmbeddingBYOLR18.png" width = "300" height="300" alt="BYOL loss curve" align=center /> 
 
 
 
