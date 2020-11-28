@@ -24,5 +24,9 @@ For BYOL, I have only tested a simple set of hyper-parameters: using a fixed mom
 |----|
 |59.96|
 
+#### BYOL Loss Curve
+
+![BYOLCurve](img/ResNet18_cifar100BYOL.png)
+
 
 
