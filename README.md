@@ -7,7 +7,7 @@ Run the BYOL by the following command:
  
 `python byol.py --data './data/' --cudaenv '0,1,2,3' --gpus '0,1,2,3' --exp 'your_exp_path' --dataset cifar100 --batch_size 512 --lr 0.12 --network resnet18_cifar`
 
-### CIFAR100 Results (with ResNet-18)
+### CIFAR100 Results (with ResNet-18 as Default Backbone)
 For Instance Discrimination task, the results on CIFAR100 with different temperatures (weight decay of 5e-4, linear projection head) are:
 
 --------
@@ -21,16 +21,18 @@ the best temperature is 0.3. When replacing a mlp projection head (with batch no
 
 For BYOL, I have only tested a simple set of hyper-parameters: using a fixed momentum of m=0.996 (instead of a cosine ramp up function in the original paper):
 
-|BYOL|
-|----|
-|59.96|
+|Network|BYOL|
+|----|----|
+|Res18|59.96|
+|Res50|64.64|
 
 #### BYOL Loss Curve
-
+-----------------------------
 
 <!-- ![BYOLCurve](img/ResNet18_cifar100BYOL.png) -->
 <div align=center><img src="img/ResNet18_cifar100BYOL.png" width = "500" alt="BYOL loss curve" align=center /></div>
 
+-----------------------------
 
 #### Embedding Visualization
 
