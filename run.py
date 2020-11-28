@@ -125,17 +125,17 @@ class ContrastiveLearning(object):
 		if args.network == 'alexnet_cifar':
 			network = AlexNet_cifar(128)
 		elif args.network == 'resnet18_cifar':
-			network = ResNet18_cifar(128, dropout=args.dropout, non_linear_head=args.nonlinearhead)
+			network = ResNet18_cifar(128, dropout=args.dropout, non_linear_head=args.nonlinearhead, mlpbn=True)
 		elif args.network == 'resnet50_cifar':
-			network = ResNet50_cifar(128, dropout=args.dropout)
+			network = ResNet50_cifar(128, dropout=args.dropout, mlpbn=True)
 		elif args.network == 'wide_resnet28':
 			network = WideResNetInstance(28, 2)
 		elif args.network == 'resnet18':
-			network = resnet18(non_linear_head=args.nonlinearhead)
+			network = resnet18(non_linear_head=args.nonlinearhead, mlpbn=True)
 		elif args.network == 'pre-resnet18':
 			network = PreActResNet18(128)
 		elif args.network == 'resnet50':
-			network = resnet50(non_linear_head=args.nonlinearhead)
+			network = resnet50(non_linear_head=args.nonlinearhead, mlpbn=True)
 		elif args.network == 'pre-resnet50':
 			network = PreActResNet50(128)
 		elif args.network == 'shufflenet':

@@ -40,9 +40,9 @@ def get_finetune_dataloader(args):
 		transforms.ToTensor(),
 		transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
 	])
-	train_dataset = datasets.CIFAR10(root='./data', train=True, download=True, transform=train_transforms) if args.dataset == 'cifar10' else datasets.CIFAR100(root='./data', train=True, download=True, transform=train_transforms)
+	train_dataset = datasets.CIFAR10(root=args.data, train=True, download=True, transform=train_transforms) if args.dataset == 'cifar10' else datasets.CIFAR100(root=args.data, train=True, download=False, transform=train_transforms)
 
-	val_dataset = datasets.CIFAR10(root='./data', train=False, download=True, transform=val_transforms) if args.dataset == 'cifar10' else datasets.CIFAR100(root='./data', train=False, download=True, transform=val_transforms)
+	val_dataset = datasets.CIFAR10(root=args.data, train=False, download=True, transform=val_transforms) if args.dataset == 'cifar10' else datasets.CIFAR100(root=args.data, train=False, download=False, transform=val_transforms)
 
 	train_loader = DataLoader(train_dataset, batch_size=args.batch_size,
 						shuffle=True, pin_memory=False,
@@ -94,9 +94,9 @@ def get_dataloader(args):
 		transforms.ToTensor(),
 		transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
 	])
-	train_dataset = CIFAR10Instance(root='./data', train=True, download=True, transform=train_transforms) if args.dataset == 'cifar10' else CIFAR100Instance(root='./data', train=True, download=True, transform=train_transforms)
+	train_dataset = CIFAR10Instance(root=args.data, train=True, download=True, transform=train_transforms) if args.dataset == 'cifar10' else CIFAR100Instance(root=args.data, train=True, download=True, transform=train_transforms)
 
-	val_dataset = CIFAR10Instance(root='./data', train=False, download=True, transform=val_transforms) if args.dataset == 'cifar10' else CIFAR100Instance(root='./data', train=False, download=True, transform=val_transforms)
+	val_dataset = CIFAR10Instance(root=args.data, train=False, download=True, transform=val_transforms) if args.dataset == 'cifar10' else CIFAR100Instance(root=args.data, train=False, download=True, transform=val_transforms)
 
 	train_ordered_labels = np.array(train_dataset.targets)
 	train_loader = DataLoader(train_dataset, batch_size=args.batch_size,
