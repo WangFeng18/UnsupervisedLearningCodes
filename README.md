@@ -8,7 +8,7 @@ Run the BYOL by the following command:
 `python byol.py --data './data/' --cudaenv '0,1,2,3' --gpus '0,1,2,3' --exp 'your_exp_path' --dataset cifar100 --batch_size 512 --lr 0.12 --network resnet18_cifar`
 
 ### CIFAR100 Results (with ResNet-18)
-For Instance Discrimination task, the results on CIFAR100 with different temperatures (weight decay of 5e-4) are:
+For Instance Discrimination task, the results on CIFAR100 with different temperatures (weight decay of 5e-4, linear projection head) are:
 
 --------
 
@@ -27,12 +27,14 @@ For BYOL, I have only tested a simple set of hyper-parameters: using a fixed mom
 
 #### BYOL Loss Curve
 
+
 <!-- ![BYOLCurve](img/ResNet18_cifar100BYOL.png) -->
 <div align=center><img src="img/ResNet18_cifar100BYOL.png" width = "500" alt="BYOL loss curve" align=center /></div>
- 
 
 
 #### Embedding Visualization
+The T-SNE visualization of features from fc layer.
+----------------------
 <img src="img/compare.png" alt="BYOL loss curve" align=center />
 
 
