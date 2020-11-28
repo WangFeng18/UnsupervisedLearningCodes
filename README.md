@@ -33,7 +33,9 @@ For BYOL, I have only tested a simple set of hyper-parameters: using a fixed mom
 
 
 #### Embedding Visualization
+
 The T-SNE visualization of features from fc layer.
+
 ----------------------
 <img src="img/compare.png" alt="BYOL loss curve" align=center />
 
