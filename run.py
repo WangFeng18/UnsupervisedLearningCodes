@@ -211,45 +211,48 @@ class ContrastiveLearning(object):
 		best_acc = 0.0
 		args = self.args
 		all_accs = []
-		try:
-			for i_epoch in range(self.start_epoch, args.max_epoch):
-				# self.criterion.t = args.t if args.t > 0 else (0.05 + 0.15*(i_epoch/float(args.max_epoch)))
-				self.criterion.t = args.t 
-				logging.info(self.criterion.t)
-				self.current_epoch = i_epoch
-				adjust_learning_rate(args.lr, args.lr_decay_steps, self.optimizer, i_epoch, lr_decay_rate=args.lr_decay_rate, cos=args.cos, max_epoch=args.max_epoch)
-				self.train()
+		if not self.args.embedding:
+			try:
+				for i_epoch in range(self.start_epoch, args.max_epoch):
+					# self.criterion.t = args.t if args.t > 0 else (0.05 + 0.15*(i_epoch/float(args.max_epoch)))
+					self.criterion.t = args.t 
+					logging.info(self.criterion.t)
+					self.current_epoch = i_epoch
+					adjust_learning_rate(args.lr, args.lr_decay_steps, self.optimizer, i_epoch, lr_decay_rate=args.lr_decay_rate, cos=args.cos, max_epoch=args.max_epoch)
+					self.train()
 
-				save_name = 'checkpoint.pth'
-				checkpoint = {
-					'epoch': i_epoch + 1,
-					'state_dict': self.network.state_dict(),
-					'optimizer': self.optimizer.state_dict(),
-					'memory_banks': self.memory_bank.points,
-					'neigh': self.memory_bank.neigh,
-				}
-				torch.save(checkpoint, os.path.join(args.exp, 'models', save_name))
+					save_name = 'checkpoint.pth'
+					checkpoint = {
+						'epoch': i_epoch + 1,
+						'state_dict': self.network.state_dict(),
+						'optimizer': self.optimizer.state_dict(),
+						'memory_banks': self.memory_bank.points,
+						'neigh': self.memory_bank.neigh,
+					}
+					torch.save(checkpoint, os.path.join(args.exp, 'models', save_name))
 
-				# scheduler.step()
-				# validate(network, memory_bank, val_loader, train_ordered_labels, device)
-				acc = self.kNN(K=200, sigma=0.07)
-				all_accs.append(acc)
-				if acc >= best_acc:
-					best_acc = acc
-					torch.save(checkpoint, os.path.join(args.exp, 'models', 'best.pth'))
-				if i_epoch in [30, 60, 120, 160, 200, 400, 600]:
-					torch.save(checkpoint, os.path.join(args.exp, 'models', '{}.pth'.format(i_epoch+1)))
+					# scheduler.step()
+					# validate(network, memory_bank, val_loader, train_ordered_labels, device)
+					acc = self.kNN(K=200, sigma=0.07)
+					all_accs.append(acc)
+					if acc >= best_acc:
+						best_acc = acc
+						torch.save(checkpoint, os.path.join(args.exp, 'models', 'best.pth'))
+					if i_epoch in [30, 60, 120, 160, 200, 400, 600]:
+						torch.save(checkpoint, os.path.join(args.exp, 'models', '{}.pth'.format(i_epoch+1)))
 
-				args.y_best_acc = best_acc
-				logging.info(colorful('[Epoch: {}] val acc: {:.4f}'.format(i_epoch, acc)))
-				logging.info(colorful('[Epoch: {}] best acc: {:.4f}'.format(i_epoch, best_acc)))
-				self.writer.add_scalar('acc', acc, i_epoch+1)
+					args.y_best_acc = best_acc
+					logging.info(colorful('[Epoch: {}] val acc: {:.4f}'.format(i_epoch, acc)))
+					logging.info(colorful('[Epoch: {}] best acc: {:.4f}'.format(i_epoch, best_acc)))
+					self.writer.add_scalar('acc', acc, i_epoch+1)
 
-				# cluster
-		except KeyboardInterrupt as e:
-			logging.info('KeyboardInterrupt at {} Epochs'.format(i_epoch))
-			save_result(self.args)
-			exit()
+					# cluster
+			except KeyboardInterrupt as e:
+				logging.info('KeyboardInterrupt at {} Epochs'.format(i_epoch))
+				save_result(self.args)
+				exit()
+		else:
+			self.inference()
 		np.save(os.path.join(self.args.exp, 'accs.npy'), all_accs)
 		self.recording.save(self.args.exp)
 		save_result(self.args)
@@ -367,6 +370,27 @@ class ContrastiveLearning(object):
 
 		return top1/total
 
+	@torch.no_grad()
+	def inference(self):
+		self.network.eval()
+		points = torch.zeros(len(self.val_dataset), 128).to(self.device).detach()
+		labels = []
+		pointer = 0
+		pbar = tqdm(self.val_loader)
+		for data in pbar:
+			img = data[1].to(self.device)
+			targets = data[2]
+			bs = img.size(0)
+			if self.args.embedding_layer == 'fc':
+				feat = self.network(img, layer=7)
+			elif self.args.embedding_layer == 'lastconv':
+				feat = self.network(img, layer=6)
+			points[pointer:pointer+bs] = feat
+			targets = list(map(lambda a: a.item(), targets))
+			labels.extend(targets)
+			pointer = pointer + bs
+		
+		self.writer.add_embedding(points, metadata=labels)
 
 def main():
 	parser = argparse.ArgumentParser()
@@ -400,6 +424,9 @@ def main():
 	parser.add_argument('--nonlinearhead', default=0, type=int)
 	parser.add_argument('--record_prob', default=0.1, type=float)
 	parser.add_argument('--record_freq', default=10, type=float)
+
+	parser.add_argument('--embedding', default=0, type=int)
+	parser.add_argument('--embedding_layer', default='fc', type=str)
 	# exclusive best to be 0
 	args = parser.parse_args()
 	Runner = ContrastiveLearning(args)
