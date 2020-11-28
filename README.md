@@ -30,7 +30,13 @@ For BYOL, I have only tested a simple set of hyper-parameters: using a fixed mom
 -----------------------------
 
 <!-- ![BYOLCurve](img/ResNet18_cifar100BYOL.png) -->
+Loss Curve on ResNet-18 BYOL
 <div align=center><img src="img/ResNet18_cifar100BYOL.png" width = "500" alt="BYOL loss curve" align=center /></div>
+
+-----------------
+
+Loss Curve on ResNet-50 BYOL
+<div align=center><img src="img/ResNet50_cifar100BYOL.png" width = "500" alt="BYOL loss curve" align=center /></div>
 
 -----------------------------
 
