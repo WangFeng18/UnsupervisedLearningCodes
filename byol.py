@@ -16,7 +16,7 @@ from objective import l2_normalize
 from models.resnet_cifar import ResNet18 as ResNet18_cifar
 from models.resnet_cifar import ResNet50 as ResNet50_cifar
 from models.resnet import resnet18, resnet50
-from models.shufflenetv2 import shufflenet_v2_x1_0
+# from models.shufflenetv2 import shufflenet_v2_x1_0
 from torch.utils.data import DataLoader
 from utils import *
 import objective
@@ -115,17 +115,17 @@ class BYOL(object):
 	def get_network(self):
 		args = self.args
 		if args.network == 'resnet18_cifar':
-			network = ResNet18_cifar(256, dropout=args.dropout, non_linear_head=args.nonlinearhead, mlpbn=True, non_linear_head=True)
-			target_network = ResNet18_cifar(256, dropout=args.dropout, non_linear_head=args.nonlinearhead, mlpbn=True, non_linear_head=True)
+			network = ResNet18_cifar(256, dropout=args.dropout, non_linear_head=True, mlpbn=True)
+			target_network = ResNet18_cifar(256, dropout=args.dropout, non_linear_head=True, mlpbn=True)
 		elif args.network == 'resnet50_cifar':
 			network = ResNet50_cifar(256, dropout=args.dropout, mlpbn=True, non_linear_head=True)
 			target_network = ResNet50_cifar(256, dropout=args.dropout, mlpbn=True, non_linear_head=True)
 		elif args.network == 'resnet18':
-			network = resnet18(non_linear_head=args.nonlinearhead, mlpbn=True, non_linear_head=True)
-			target_network = resnet18(non_linear_head=args.nonlinearhead, mlpbn=True, non_linear_head=True)
+			network = resnet18(non_linear_head=True, mlpbn=True)
+			target_network = resnet18(non_linear_head=True, mlpbn=True)
 		elif args.network == 'resnet50':
-			network = resnet50(non_linear_head=args.nonlinearhead, mlpbn=True, non_linear_head=True)
-			target_network = resnet50(non_linear_head=args.nonlinearhead, mlpbn=True, non_linear_head=True)
+			network = resnet50(non_linear_head=True, mlpbn=True)
+			target_network = resnet50(non_linear_head=True, mlpbn=True)
 		self.network = nn.DataParallel(network, device_ids=self.device_ids)
 		self.network.to(self.device)
 		self.target_network = nn.DataParallel(target_network, device_ids=self.device_ids)
@@ -153,7 +153,7 @@ class BYOL(object):
 			parameters = self.network.parameters()
 
 		self.optimizer = torch.optim.SGD(
-			parameters + self.predictor.parameters(),
+			list(parameters) + list(self.predictor.parameters()),
 			lr=args.lr,
 			momentum=0.9,
 			weight_decay=args.weight_decay,
@@ -176,9 +176,6 @@ class BYOL(object):
 		all_accs = []
 		try:
 			for i_epoch in range(self.start_epoch, args.max_epoch):
-				# self.criterion.t = args.t if args.t > 0 else (0.05 + 0.15*(i_epoch/float(args.max_epoch)))
-				self.criterion.t = args.t 
-				logging.info(self.criterion.t)
 				self.current_epoch = i_epoch
 				adjust_learning_rate(args.lr, args.lr_decay_steps, self.optimizer, i_epoch, lr_decay_rate=args.lr_decay_rate, cos=args.cos, max_epoch=args.max_epoch)
 				self.train()
@@ -202,7 +199,7 @@ class BYOL(object):
 			logging.info('KeyboardInterrupt at {} Epochs'.format(i_epoch))
 			save_result(self.args)
 			exit()
-		self.recording.save(self.args.exp)
+		# self.recording.save(self.args.exp)
 		save_result(self.args)
 
 	def record_similarity(self, similarities, index):
@@ -253,19 +250,18 @@ class BYOL(object):
 			losses.add(loss.item())
 
 			self.optimizer.zero_grad()
-			L.backward()
+			loss.backward()
 			self.optimizer.step()
 			self.update_param()
 
 			lr = self.optimizer.param_groups[0]['lr']
 			pbar.set_description("Epoch:{} [lr:{}]".format(self.current_epoch, lr))
 			info = 'L: {:.4f}'.format(losses.get())
-			info = info + ',' + str(self.recording)
 			pbar.set_postfix(info=info)
 
 		self.writer.add_scalar('L', losses.get(), self.current_epoch)
-		self.recording.add_scalar(self.writer, self.current_epoch)
-		self.recording.epoch_record()
+		# self.recording.add_scalar(self.writer, self.current_epoch)
+		# self.recording.epoch_record()
 		logging.info('Epoch {}: L: {:.4f}'.format(self.current_epoch, losses.get()))
 		# self.save_record_similarity()
 

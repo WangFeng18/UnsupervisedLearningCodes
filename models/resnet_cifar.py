@@ -159,14 +159,14 @@ class ResNet(nn.Module):
 	
 
 
-def ResNet18(low_dim=128, dropout=False, non_linear_head=False):
-	return ResNet(BasicBlock, [2,2,2,2], low_dim, dropout=dropout, non_linear_head=non_linear_head)
+def ResNet18(low_dim=128, dropout=False, non_linear_head=False, mlpbn=False):
+	return ResNet(BasicBlock, [2,2,2,2], low_dim, dropout=dropout, non_linear_head=non_linear_head, mlpbn=mlpbn)
 
 def ResNet34(low_dim=128):
 	return ResNet(BasicBlock, [3,4,6,3], low_dim)
 
-def ResNet50(low_dim=128, dropout=False):
-	return ResNet(Bottleneck, [3,4,6,3], low_dim, dropout=dropout)
+def ResNet50(low_dim=128, dropout=False, non_linear_head=False, mlpbn=False):
+	return ResNet(Bottleneck, [3,4,6,3], low_dim, dropout=dropout, non_linear_head=non_linear_head, mlpbn=mlpbn)
 
 def ResNet101(low_dim=128):
 	return ResNet(Bottleneck, [3,4,23,3], low_dim)
