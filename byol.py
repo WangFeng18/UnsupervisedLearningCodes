@@ -75,7 +75,10 @@ class BYOL(object):
 		logging.info(beautify(args))
 		self.start_epoch = 0
 		if args.resume_path != '':
-			self.load_checkpoint(args.resume_path)
+			try:
+				self.load_checkpoint(args.resume_path)
+			except:
+				pass
 		self.all_record_similarities = []
 		self.all_record_indices = []
 		self.main_loop()
@@ -165,6 +168,7 @@ class BYOL(object):
 		logging.info('resume from {}'.format(args.resume_path))
 		checkpoint = torch.load(args.resume_path)
 		self.network.load_state_dict(checkpoint['state_dict'])
+		self.predictor.load_state_dict(checkpoint['predictor_state_dict'])
 		self.target_network.load_state_dict(checkpoint['target_state_dict'])
 		self.optimizer.load_state_dict(checkpoint['optimizer'])
 		self.start_epoch = checkpoint['epoch']
@@ -174,31 +178,37 @@ class BYOL(object):
 		best_acc = 0.0
 		args = self.args
 		all_accs = []
-		try:
-			for i_epoch in range(self.start_epoch, args.max_epoch):
-				self.current_epoch = i_epoch
-				adjust_learning_rate(args.lr, args.lr_decay_steps, self.optimizer, i_epoch, lr_decay_rate=args.lr_decay_rate, cos=args.cos, max_epoch=args.max_epoch)
-				self.train()
+		if not self.args.embedding:
+			try:
+				for i_epoch in range(self.start_epoch, args.max_epoch):
+					self.current_epoch = i_epoch
+					adjust_learning_rate(args.lr, args.lr_decay_steps, self.optimizer, i_epoch, lr_decay_rate=args.lr_decay_rate, cos=args.cos, max_epoch=args.max_epoch)
+					self.train()
 
-				save_name = 'checkpoint.pth'
-				checkpoint = {
-					'epoch': i_epoch + 1,
-					'state_dict': self.network.state_dict(),
-					'optimizer': self.optimizer.state_dict(),
-					'target_state_dict': self.target_network.state_dict(),
-				}
-				torch.save(checkpoint, os.path.join(args.exp, 'models', save_name))
+					save_name = 'checkpoint.pth'
+					checkpoint = {
+						'epoch': i_epoch + 1,
+						'state_dict': self.network.state_dict(),
+						'optimizer': self.optimizer.state_dict(),
+						'target_state_dict': self.target_network.state_dict(),
+						'predictor_state_dict': self.predictor.state_dict(),
+					}
+					torch.save(checkpoint, os.path.join(args.exp, 'models', save_name))
 
-				# scheduler.step()
-				# validate(network, memory_bank, val_loader, train_ordered_labels, device)
-				if i_epoch in [30, 60, 120, 160, 200, 400, 600]:
-					torch.save(checkpoint, os.path.join(args.exp, 'models', '{}.pth'.format(i_epoch+1)))
+					# scheduler.step()
+					# validate(network, memory_bank, val_loader, train_ordered_labels, device)
+					if i_epoch in [30, 60, 120, 160, 200, 400, 600]:
+						torch.save(checkpoint, os.path.join(args.exp, 'models', '{}.pth'.format(i_epoch+1)))
 
-				# cluster
-		except KeyboardInterrupt as e:
-			logging.info('KeyboardInterrupt at {} Epochs'.format(i_epoch))
-			save_result(self.args)
-			exit()
+					# cluster
+				
+			except KeyboardInterrupt as e:
+				logging.info('KeyboardInterrupt at {} Epochs'.format(i_epoch))
+				save_result(self.args)
+				exit()
+		else:
+			self.inference()
+
 		# self.recording.save(self.args.exp)
 		save_result(self.args)
 
@@ -265,6 +275,29 @@ class BYOL(object):
 		logging.info('Epoch {}: L: {:.4f}'.format(self.current_epoch, losses.get()))
 		# self.save_record_similarity()
 
+	@torch.no_grad()
+	def inference(self):
+		self.network.eval()
+		points = torch.zeros(len(self.val_dataset), 256).to(self.device).detach()
+		labels = []
+		pointer = 0
+		pbar = tqdm(self.val_loader)
+		for data in pbar:
+			img = data[0].to(self.device)
+			targets = data[2]
+			bs = img.size(0)
+			if self.args.embedding_layer == 'fc':
+				feat = self.network(img, layer=7)
+			elif self.args.embedding_layer == 'lastconv':
+				feat = self.network(img, layer=6)
+			points[pointer:pointer+bs] = feat
+			targets = list(map(lambda a: a.item(), targets))
+			labels.extend(targets)
+			pointer = pointer + bs
+		
+		self.writer.add_embedding(points, metadata=labels)
+
+
 
 def main():
 	parser = argparse.ArgumentParser()
@@ -292,6 +325,9 @@ def main():
 	parser.add_argument('--network', default='resnet18', type=str)
 	parser.add_argument('--record_prob', default=0.1, type=float)
 	parser.add_argument('--record_freq', default=10, type=float)
+
+	parser.add_argument('--embedding', default=0, type=int)
+	parser.add_argument('--embedding_layer', default='fc', type=str)
 	# exclusive best to be 0
 	args = parser.parse_args()
 	Runner = BYOL(args)
@@ -316,3 +352,6 @@ if __name__ == '__main__':
 	args = main()
 	run_eval_linear(args)
 	#run_semi_supervised(args)
+
+
+#python byol.py --data './data/' --cudaenv '0,1,2,3' --gpus '0,1,2,3' --exp '/matrix/BYOL/res50/' --dataset 'cifar100' --batch_size 256 --lr 0.06 --network 'resnet50_cifar'
