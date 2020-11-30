@@ -44,8 +44,15 @@ Loss Curve on ResNet-50 BYOL
 
 The T-SNE visualization of features from fc layer.
 
+##### ResNet18
 ----------------------
 <img src="img/compare.png" alt="BYOL loss curve" align=center />
+
+##### ResNet18 (aug+)
+---------------------
+<img src="img/EmbeddingBYOLR18_augplus.png" alt="BYOL loss curve" align=center />
+
+
 
 
 
