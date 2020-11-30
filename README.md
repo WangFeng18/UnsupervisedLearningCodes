@@ -50,7 +50,10 @@ The T-SNE visualization of features from fc layer.
 
 ##### ResNet18 (aug+)
 ---------------------
-<div align=center><img src="img/EmbeddingBYOLR18_augplus.png" width = "300" alt="BYOL loss curve" align=center /></div>
+<div align=center>
+<div align=center, style="display:inline-block;width:45%"><img src="img/EmbeddingBYOLR18_augplus.png" width = 100% height=100% alt="BYOL loss curve" align=center /> FC Embedding</div>
+<div align=center, style="display:inline-block;width:45%"><img src="img/EmbeddingLASTCONV_BYOLR18_augplus.png" width = 100% height=100% alt="BYOL loss curve" align=center /> CONV Embedding</div>
+</div>
 
 
 

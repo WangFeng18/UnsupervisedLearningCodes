@@ -96,9 +96,14 @@ class BYOL(object):
 		args = self.args
 		if not os.path.exists(os.path.join(args.exp, 'logs')):
 			os.makedirs(os.path.join(args.exp, 'logs'))
-		if not os.path.exists(os.path.join(args.exp, 'runs')):
-			os.makedirs(os.path.join(args.exp, 'runs'))
-		self.writer = SummaryWriter(logdir=os.path.join(self.args.exp, 'runs'))
+		if self.args.embedding:
+			if not os.path.exists(os.path.join(args.exp, 'runs_'+self.args.embedding_layer)):
+				os.makedirs(os.path.join(args.exp, 'runs_'+self.args.embedding_layer))
+			self.writer = SummaryWriter(logdir=os.path.join(self.args.exp, 'runs_'+self.args.embedding_layer))
+		else:
+			if not os.path.exists(os.path.join(args.exp, 'runs')):
+				os.makedirs(os.path.join(args.exp, 'runs'))
+			self.writer = SummaryWriter(logdir=os.path.join(self.args.exp, 'runs'))
 		self.logger = getLogger(args.exp)
 
 	def get_dataloader(self):
@@ -278,7 +283,10 @@ class BYOL(object):
 	@torch.no_grad()
 	def inference(self):
 		self.network.eval()
-		points = torch.zeros(len(self.val_dataset), 256).to(self.device).detach()
+		if self.args.embedding_layer == 'fc':
+			points = torch.zeros(len(self.val_dataset), 256).to(self.device).detach()
+		elif self.args.embedding_layer == 'lastconv':
+			points = torch.zeros(len(self.val_dataset), 512).to(self.device).detach()
 		labels = []
 		pointer = 0
 		pbar = tqdm(self.val_loader)
