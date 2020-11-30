@@ -1,6 +1,7 @@
 from __future__ import division
 from __future__ import print_function
 from PIL import Image
+from PIL import ImageFilter
 import random
 import torch
 import torchvision.datasets as datasets
@@ -21,6 +22,18 @@ class RandomBlur(object):
 
 	def __repr__(self):
 		return 'Blur'
+
+class GaussianBlur(object):
+	"""Gaussian blur augmentation in SimCLR https://arxiv.org/abs/2002.05709"""
+
+	def __init__(self, sigma=[.1, 2.]):
+		self.sigma = sigma
+
+	def __call__(self, x):
+		sigma = random.uniform(self.sigma[0], self.sigma[1])
+		x = x.filter(ImageFilter.GaussianBlur(radius=sigma))
+		return x
+
 
 def get_linear_dataloader(args):
 	train_transforms = transforms.Compose([
@@ -49,15 +62,29 @@ def get_linear_dataloader(args):
 	return train_loader, val_loader
 
 def get_dataloader(args):
-	train_transforms = transforms.Compose([
-		transforms.RandomResizedCrop(size=32, scale=(0.2,1.)),
-		transforms.ColorJitter(0.4, 0.4, 0.4, 0.4),
-		transforms.RandomGrayscale(p=0.2),
-		# RandomBlur(),
-		#transforms.RandomHorizontalFlip(),
-		transforms.ToTensor(),
-		transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
-	])
+	if args.blur:
+		train_transforms = transforms.Compose([
+			transforms.RandomResizedCrop(size=32, scale=(0.2,1.)),
+			transforms.RandomApply([
+					transforms.ColorJitter(0.4, 0.4, 0.4, 0.1)  # not strengthened
+			], p=0.8),
+			transforms.RandomGrayscale(p=0.2),
+			transforms.RandomApply([GaussianBlur([.1, 2.])], p=0.5),
+			# RandomBlur(),
+			transforms.RandomHorizontalFlip(),
+			transforms.ToTensor(),
+			transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+		])
+	else:
+		train_transforms = transforms.Compose([
+			transforms.RandomResizedCrop(size=32, scale=(0.2,1.)),
+			transforms.ColorJitter(0.4, 0.4, 0.4, 0.4),
+			transforms.RandomGrayscale(p=0.2),
+			# RandomBlur(),
+			#transforms.RandomHorizontalFlip(),
+			transforms.ToTensor(),
+			transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+		])
 
 	val_transforms = transforms.Compose([
 		transforms.ToTensor(),
