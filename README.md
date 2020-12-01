@@ -37,21 +37,41 @@ Loss Curve on ResNet-18 BYOL (left) and ResNet-50 BYOL (right)
 
 #### Embedding Visualization
 
-The T-SNE visualization of features from **FC** layer with **ResNet-18** as backbone, instance discrimination (left, t=0.20) vs BYOL (right, no blur).
+##### ResNet18 FC Comparison.
+The T-SNE visualization of features from **FC** layer with **ResNet-18** as backbone, instance discrimination (left, t=0.20), BYOL (middle, no blur), BYOL_aug+ (right, with blur).
 
-##### ResNet18
 ----------------------
 <img src="img/cmp_embedding_fc_insd_byol_r18.png" alt="" align=center />
+----------------------
 
-##### ResNet18 (aug+)
+
+##### ResNet18 CONV Comparison
+The T-SNE visualization of features from **the last CONV** layer with **ResNet-18** as backbone, instance discrimination (left, t=0.20), BYOL (middle, no blur), BYOL_aug+ (right, with blur).
+
 ---------------------
-<div align=center>
-<div align=center, style="display:inline-block;width:45%"><img src="img/EmbeddingBYOLR18_augplus.png" width = 100% height=100% alt="BYOL loss curve" align=center /> FC Embedding</div>
-<div align=center, style="display:inline-block;width:45%"><img src="img/EmbeddingLASTCONV_BYOLR18_augplus.png" width = 100% height=100% alt="BYOL loss curve" align=center /> CONV Embedding</div>
-</div>
+<img src="img/cmp_embedding_conv_insd_byol_r18.png" alt="" align=center />
 
+### Ablation
+#### Effect of BatchNormalization
 
+BYOL is hightly dependent on the batch normalization, we examine it with the following settings: 
 
+1. take out the BN in MLP head projection.
+2. take out the BN in Backbone architechutre.
+3. take out both.
+
+**Default Setting**: Except for the above three variants, all other settings are identical: with BYOL aug+, ResNet-18. The default t-SNE is calculated on the output of the last convolutional layer.
+
+|Setting|Results|
+|----|----|
+|Baseline|62.74|
+|No MLP projection|50.67|
+
+Comparison of with or without MLPBN, using the above **Default Setting**, we visulaize the t-SNE, with MLPBN (left), without MLPBN(right).
+
+----------------------
+<img src="img/cmp_r18womlpbn_lastconv.png" alt="" align=center />
+----------------------
 
 
 
