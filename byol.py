@@ -123,17 +123,17 @@ class BYOL(object):
 	def get_network(self):
 		args = self.args
 		if args.network == 'resnet18_cifar':
-			network = ResNet18_cifar(256, dropout=args.dropout, non_linear_head=True, mlpbn=True)
-			target_network = ResNet18_cifar(256, dropout=args.dropout, non_linear_head=True, mlpbn=True)
+			network = ResNet18_cifar(256, dropout=args.dropout, non_linear_head=True, mlpbn=args.mlpbn)
+			target_network = ResNet18_cifar(256, dropout=args.dropout, non_linear_head=True, mlpbn=args.mlpbn)
 		elif args.network == 'resnet50_cifar':
-			network = ResNet50_cifar(256, dropout=args.dropout, mlpbn=True, non_linear_head=True)
-			target_network = ResNet50_cifar(256, dropout=args.dropout, mlpbn=True, non_linear_head=True)
+			network = ResNet50_cifar(256, dropout=args.dropout, mlpbn=args.mlpbn, non_linear_head=True)
+			target_network = ResNet50_cifar(256, dropout=args.dropout, mlpbn=args.mlpbn, non_linear_head=True)
 		elif args.network == 'resnet18':
-			network = resnet18(non_linear_head=True, mlpbn=True)
-			target_network = resnet18(non_linear_head=True, mlpbn=True)
+			network = resnet18(non_linear_head=True, mlpbn=args.mlpbn)
+			target_network = resnet18(non_linear_head=True, mlpbn=args.mlpbn)
 		elif args.network == 'resnet50':
-			network = resnet50(non_linear_head=True, mlpbn=True)
-			target_network = resnet50(non_linear_head=True, mlpbn=True)
+			network = resnet50(non_linear_head=True, mlpbn=args.mlpbn)
+			target_network = resnet50(non_linear_head=True, mlpbn=args.mlpbn)
 		self.network = nn.DataParallel(network, device_ids=self.device_ids)
 		self.network.to(self.device)
 		self.target_network = nn.DataParallel(target_network, device_ids=self.device_ids)
@@ -329,6 +329,7 @@ def main():
 	parser.add_argument('--dropout', action='store_true')
 	parser.add_argument('--blur', action='store_true')
 	parser.add_argument('--cos', action='store_true')
+	parser.add_argument('--mlpbn', default=1, type=int)
 
 	parser.add_argument('--network', default='resnet18', type=str)
 	parser.add_argument('--record_prob', default=0.1, type=float)

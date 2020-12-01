@@ -86,6 +86,7 @@ class ResNet(nn.Module):
 		else:
 			logging.info(colorful('Using Non Linear Head'))
 			if mlpbn:
+				logging.info('Using BatchNorm in MLP head projection')
 				self.linear = nn.Sequential(
 						nn.Linear(512 * block.expansion, 512 * block.expansion),
 						nn.BatchNorm1d(512 * block.expansion),
@@ -93,6 +94,7 @@ class ResNet(nn.Module):
 						nn.Linear(512 * block.expansion, low_dim),
 				)
 			else:
+				logging.info('Not Using BatchNorm in MLP head projection')
 				self.linear = nn.Sequential(
 							nn.Linear(512 * block.expansion, 512 * block.expansion),
 							nn.ReLU(inplace=True),
