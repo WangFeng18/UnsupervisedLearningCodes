@@ -24,7 +24,7 @@ For BYOL, I have only tested a simple set of hyper-parameters: using a fixed mom
 |Network|BYOL|BYOL(aug+)|BestInsDis|
 |----|----|----|----|
 |Res18|59.96|62.74|56.44|
-|Res50|64.64| --- |62.74|
+|Res50|64.64|65.51|62.74|
 
 #### BYOL Loss Curve
 -----------------------------
@@ -54,6 +54,10 @@ The T-SNE visualization of features from fc layer.
 <div align=center, style="display:inline-block;width:45%"><img src="img/EmbeddingBYOLR18_augplus.png" width = 100% height=100% alt="BYOL loss curve" align=center /> FC Embedding</div>
 <div align=center, style="display:inline-block;width:45%"><img src="img/EmbeddingLASTCONV_BYOLR18_augplus.png" width = 100% height=100% alt="BYOL loss curve" align=center /> CONV Embedding</div>
 </div>
+
+
+
+
 
 
 
