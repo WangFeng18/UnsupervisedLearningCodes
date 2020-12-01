@@ -18,6 +18,6 @@ for ipath in args.source:
 	img = cv2.resize(img, (args.w, args.h))
 	imgs.append(img)
 	imgs.append(np.zeros(shape=(img.shape[0], w, 3)))
-imgs = np.concatenate(imgs, axis=1)
+imgs = np.concatenate(imgs[:-1], axis=1)
 
 cv2.imwrite(args.dest, imgs)
