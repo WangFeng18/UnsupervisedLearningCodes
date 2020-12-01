@@ -37,11 +37,11 @@ Loss Curve on ResNet-18 BYOL (left) and ResNet-50 BYOL (right)
 
 #### Embedding Visualization
 
-The T-SNE visualization of features from fc layer.
+The T-SNE visualization of features from **FC** layer with **ResNet-18** as backbone, instance discrimination (left, t=0.20) vs BYOL (right, no blur).
 
 ##### ResNet18
 ----------------------
-<img src="img/compare.png" alt="BYOL loss curve" align=center />
+<img src="img/cmp_embedding_fc_insd_byol_r18.png" alt="" align=center />
 
 ##### ResNet18 (aug+)
 ---------------------
