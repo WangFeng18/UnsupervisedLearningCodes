@@ -74,6 +74,33 @@ Comparison of with or without MLPBN, using the above **Default Setting**, we vis
 ----------------------
 
 
+### CIFAR10 Results
+
+For Instance Discrimination task, the results on CIFAR10 with different temperatures (weight decay of 5e-4, linear projection head) are:
+
+--------
+
+Temporature  | 0.05 | 0.07 | 0.10|0.20|0.30|0.40|0.50|0.60|0.70|0.80|
+--------- | --------| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+LinearAcc |76.10|79.75|81.82|**83.78**|83.27|83.22|82.54|82.97|82.69|82.67|81.97|82.21|
+
+-------
+
+the best temperature is 0.2.
+
+For BYOL, I have only tested a simple set of hyper-parameters: using a fixed momentum of m=0.996 (instead of a cosine ramp up function in the original paper):
+
+|Network|BYOL|BYOL(aug+)|BestInsDis|
+|----|----|----|----|
+|Res18|-|89.06|83.78|
+
+#### Embedding Visualization
+
+The T-SNE visualization of features from **the last CONV** layer with **ResNet-18** as backbone, instance discrimination (left, t=0.20), BYOL (middle, no blur), BYOL_aug+ (right, with blur), dataset: CIFAR10.
+
+----------------------
+<img src="img/cmp_embedding_cifar10.png" alt="" align=center />
+----------------------
 
 
 
