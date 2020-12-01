@@ -58,14 +58,14 @@ BYOL is hightly dependent on the batch normalization, we examine it with the fol
 
 1. take out the BN in MLP head projection.
 2. take out the BN in Backbone architechutre.
-3. take out both.
+3. take out the BN in predictor.
 
 **Default Setting**: Except for the above three variants, all other settings are identical: with BYOL aug+, ResNet-18. The default t-SNE is calculated on the output of the last convolutional layer.
 
 |Setting|Results|
 |----|----|
 |Baseline|62.74|
-|No MLP projection|50.67|
+|MLP projection without BN|50.67|
 
 Comparison of with or without MLPBN, using the above **Default Setting**, we visulaize the t-SNE, with MLPBN (left), without MLPBN(right).
 
