@@ -46,10 +46,10 @@ The T-SNE visualization of features from **FC** layer with **ResNet-18** as back
 
 
 ##### ResNet18 CONV Comparison
-The T-SNE visualization of features from **the last CONV** layer with **ResNet-18** as backbone, instance discrimination (left, t=0.20), BYOL (middle, no blur), BYOL_aug+ (right, with blur).
+The T-SNE visualization of features from **the last CONV** layer with **ResNet-18** as backbone, instance discrimination (left, t=0.20), BYOL (middle left, no blur), BYOL_aug+ (middle right, with blur), SimCLR (right, aut+, t=0.50).
 
 ---------------------
-<img src="img/cmp_embedding_conv_insd_byol_r18.png" alt="" align=center />
+<img src="img/cmp_embedding_conv_insd_byol_simclr_r18.png" alt="" align=center />
 
 ### Ablation
 #### Effect of BatchNormalization
