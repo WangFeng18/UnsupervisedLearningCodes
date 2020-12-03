@@ -21,7 +21,7 @@ the best temperature is 0.3. When replacing a mlp projection head (with batch no
 
 For BYOL, I have only tested a simple set of hyper-parameters: using a fixed momentum of m=0.996 (instead of a cosine ramp up function in the original paper):
 
-|Network|BYOL|BYOL(aug+)|SimCLR(aug+)|BestInsDis|
+|Network|BYOL|BYOL(aug+)|SimCLR(t=0.5,aug+)|BestInsDis|
 |----|----|----|----|----|
 |Res18|59.96|62.74|60.78|56.44|
 |Res50|64.64|65.51|--|62.74|
