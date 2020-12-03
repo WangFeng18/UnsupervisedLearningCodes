@@ -1,4 +1,4 @@
-### Implementation of Contrastive Learning Methods based on Memory Bank and BYOL
+### Implementation of Contrastive Learning Methods based on Memory Bank, SimCLR and BYOL
 Run the Instance Discrimination (representative contrastive learning method) task by:
  
 `python run.py --data './data/' --cudaenv '0,1,2,3' --gpus '0,1,2,3' --exp 'your_exp_path' --dataset cifar100 --batch_size 128 --lr 0.03 --network resnet18_cifar --t 0.30 --loss insd`
@@ -21,10 +21,10 @@ the best temperature is 0.3. When replacing a mlp projection head (with batch no
 
 For BYOL, I have only tested a simple set of hyper-parameters: using a fixed momentum of m=0.996 (instead of a cosine ramp up function in the original paper):
 
-|Network|BYOL|BYOL(aug+)|BestInsDis|
+|Network|BYOL|BYOL(aug+)|SimCLR(aug+)|BestInsDis|
 |----|----|----|----|
-|Res18|59.96|62.74|56.44|
-|Res50|64.64|65.51|62.74|
+|Res18|59.96|62.74|60.78|56.44|
+|Res50|64.64|65.51|--|62.74|
 
 #### BYOL Loss Curve
 -----------------------------
@@ -96,7 +96,7 @@ For BYOL, I have only tested a simple set of hyper-parameters: using a fixed mom
 
 #### Embedding Visualization
 
-The T-SNE visualization of features from **the last CONV** layer with **ResNet-18** as backbone, instance discrimination (left, t=0.20), BYOL (middle, no blur), BYOL_aug+ (right, with blur), dataset: CIFAR10.
+The T-SNE visualization of features from **the last CONV** layer with **ResNet-18** as backbone, instance discrimination (left, t=0.20), BYOL_aug+ (right, with blur), dataset: CIFAR10.
 
 ----------------------
 <img src="img/cmp_embedding_cifar10.png" alt="" align=center />

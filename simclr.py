@@ -122,17 +122,13 @@ class BYOL(object):
 	def get_network(self):
 		args = self.args
 		if args.network == 'resnet18_cifar':
-			network = ResNet18_cifar(256, dropout=args.dropout, non_linear_head=True, mlpbn=args.mlpbn)
-			target_network = ResNet18_cifar(256, dropout=args.dropout, non_linear_head=True, mlpbn=args.mlpbn)
+			network = ResNet18_cifar(128, dropout=args.dropout, non_linear_head=True, mlpbn=args.mlpbn)
 		elif args.network == 'resnet50_cifar':
-			network = ResNet50_cifar(256, dropout=args.dropout, mlpbn=args.mlpbn, non_linear_head=True)
-			target_network = ResNet50_cifar(256, dropout=args.dropout, mlpbn=args.mlpbn, non_linear_head=True)
+			network = ResNet50_cifar(128, dropout=args.dropout, mlpbn=args.mlpbn, non_linear_head=True)
 		elif args.network == 'resnet18':
 			network = resnet18(non_linear_head=True, mlpbn=args.mlpbn)
-			target_network = resnet18(non_linear_head=True, mlpbn=args.mlpbn)
 		elif args.network == 'resnet50':
 			network = resnet50(non_linear_head=True, mlpbn=args.mlpbn)
-			target_network = resnet50(non_linear_head=True, mlpbn=args.mlpbn)
 		self.network = nn.DataParallel(network, device_ids=self.device_ids)
 		self.network.to(self.device)
 
@@ -229,25 +225,20 @@ class BYOL(object):
 			img1 = data[0].to(self.device)
 			img2 = data[1].to(self.device)
 
-			featA1 = self.network(img1)
-			featA2 = l2_normalize(self.target_network(img2)).to(self.device)
+			feat1 = l2_normalize(self.network(img1))
+			feat2 = l2_normalize(self.network(img2))
+			sims = torch.matmul(feat1, torch.transpose(feat2, 1, 0))
+			# pos_sims = (feat1 * feat2).sum(dim=1)
+			double_sims = (sims + torch.transpose(sims, 1, 0)) - torch.diagflat(torch.diagonal(sims))
 
-			predicted_featA2 = l2_normalize(self.predictor(featA1)).to(self.device)
-			loss1 = ((predicted_featA2 - featA2)**2).sum(dim=1).mean()
-
-			featB1 = self.network(img2)
-			featB2 = l2_normalize(self.target_network(img1)).to(self.device)
-			predicted_featB2 = l2_normalize(self.predictor(featB1)).to(self.device)
-			loss2 = ((predicted_featB2 - featB2)**2).sum(dim=1).mean()
-
-			loss = loss1 + loss2
+			label = torch.arange(0,img1.size(0), dtype=torch.long).to(self.device)
+			loss = torch.nn.CrossEntropyLoss()(double_sims/self.args.t, label)
 
 			losses.add(loss.item())
 
 			self.optimizer.zero_grad()
 			loss.backward()
 			self.optimizer.step()
-			self.update_param()
 
 			lr = self.optimizer.param_groups[0]['lr']
 			pbar.set_description("Epoch:{} [lr:{}]".format(self.current_epoch, lr))
@@ -310,6 +301,7 @@ def main():
 	parser.add_argument('--blur', action='store_true')
 	parser.add_argument('--cos', action='store_true')
 	parser.add_argument('--mlpbn', default=1, type=int)
+	parser.add_argument('--t', default=0.1, type=float)
 
 	parser.add_argument('--network', default='resnet18', type=str)
 	parser.add_argument('--record_prob', default=0.1, type=float)

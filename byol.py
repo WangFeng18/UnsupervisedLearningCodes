@@ -138,12 +138,19 @@ class BYOL(object):
 		self.network.to(self.device)
 		self.target_network = nn.DataParallel(target_network, device_ids=self.device_ids)
 		self.target_network.to(self.device)
-		self.predictor = nn.Sequential(
-						nn.Linear(256, 256),
-						nn.BatchNorm1d(256),
-						nn.ReLU(inplace=True),
-						nn.Linear(256, 256),
-		)
+		if self.args.prebn:
+			self.predictor = nn.Sequential(
+							nn.Linear(256, 256),
+							nn.BatchNorm1d(256),
+							nn.ReLU(inplace=True),
+							nn.Linear(256, 256),
+			)
+		else:
+			self.predictor = nn.Sequential(
+							nn.Linear(256, 256),
+							nn.ReLU(inplace=True),
+							nn.Linear(256, 256),
+			)
 		self.predictor = nn.DataParallel(self.predictor, device_ids=self.device_ids)
 		self.predictor.to(self.device)
 
@@ -330,6 +337,7 @@ def main():
 	parser.add_argument('--blur', action='store_true')
 	parser.add_argument('--cos', action='store_true')
 	parser.add_argument('--mlpbn', default=1, type=int)
+	parser.add_argument('--prebn', default=1, type=int)
 
 	parser.add_argument('--network', default='resnet18', type=str)
 	parser.add_argument('--record_prob', default=0.1, type=float)
