@@ -3,6 +3,10 @@ Run the Instance Discrimination (representative contrastive learning method) tas
  
 `python run.py --data './data/' --cudaenv '0,1,2,3' --gpus '0,1,2,3' --exp 'your_exp_path' --dataset cifar100 --batch_size 128 --lr 0.03 --network resnet18_cifar --t 0.30 --loss insd`
 
+Run SimCLR by the following command:
+
+`python simclr.py --data './data/' --cudaenv '0,1,2,3' --gpus '0,1,2,3' --exp 'your_exp_path' --dataset 'cifar100' --batch_size 1024 --lr 0.3 --network 'resnet18_cifar' --blur --mlpbn 1 --t 0.50`
+
 Run the BYOL by the following command:
  
 `python byol.py --data './data/' --cudaenv '0,1,2,3' --gpus '0,1,2,3' --exp 'your_exp_path' --dataset cifar100 --batch_size 512 --lr 0.12 --network resnet18_cifar`
@@ -99,6 +103,8 @@ BYOL is hightly dependent on the batch normalization, we examine it with the fol
 |011(No BN1)|-|
 |110(No BN3)|56.37|
 |010(No MLP projection BN)|50.67|
+|100(No BN2 and BN3)|-|
+|001(No BN1 and BN3)|-|
 |000(No BN)|1.56(collapse)|
 
 Comparison of with or without MLPBN, using the above **Default Setting**, we visulaize the t-SNE, with MLPBN (left), without MLPBN(right).
