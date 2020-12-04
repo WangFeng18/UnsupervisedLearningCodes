@@ -86,21 +86,20 @@ The T-SNE visualization of features from **the last CONV** layer with **ResNet-1
 
 ### Ablation
 #### Effect of BatchNormalization
+<img src="img/BYOL_sketch.png" alt="" align=center />
 
-BYOL is hightly dependent on the batch normalization, we examine it with the following settings: 
-
-1. take out the BN in MLP head projection.
-2. take out the BN in Backbone architechutre.
-3. take out the BN in predictor.
+BYOL is hightly dependent on the batch normalization, we examine it with the following settings: take out BN1, BN2, BN3 and their combinations. Using binary code to represents the 8 states. For example, the code of BN123 is 000 for removing all bns, and 001 for removing BN1 and BN2.
 
 **Default Setting**: Except for the above three variants, all other settings are identical: with BYOL aug+, ResNet-18. The default t-SNE is calculated on the output of the last convolutional layer.
 
 |Setting|Results|
 |----|----|
-|Baseline|62.74|
-|MLP projection without BN|50.67|
-|MLP predictor  without BN|62.66|
-|Both without BN|1.56(collapse)|
+|111(Baseline)|62.74|
+|101(No MLP predictor BN)|62.66|
+|011(No BN1)|-|
+|110(No BN3)|56.37|
+|010(No MLP projection BN)|50.67|
+|000(No BN)|1.56(collapse)|
 
 Comparison of with or without MLPBN, using the above **Default Setting**, we visulaize the t-SNE, with MLPBN (left), without MLPBN(right).
 
