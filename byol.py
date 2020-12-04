@@ -124,16 +124,16 @@ class BYOL(object):
 		args = self.args
 		if args.network == 'resnet18_cifar':
 			network = ResNet18_cifar(256, dropout=args.dropout, non_linear_head=True, mlpbn=args.mlpbn)
-			target_network = ResNet18_cifar(256, dropout=args.dropout, non_linear_head=True, mlpbn=args.mlpbn)
+			target_network = ResNet18_cifar(256, dropout=args.dropout, non_linear_head=True, mlpbn=args.targetmlpbn)
 		elif args.network == 'resnet50_cifar':
 			network = ResNet50_cifar(256, dropout=args.dropout, mlpbn=args.mlpbn, non_linear_head=True)
-			target_network = ResNet50_cifar(256, dropout=args.dropout, mlpbn=args.mlpbn, non_linear_head=True)
+			target_network = ResNet50_cifar(256, dropout=args.dropout, mlpbn=args.targetmlpbn, non_linear_head=True)
 		elif args.network == 'resnet18':
 			network = resnet18(non_linear_head=True, mlpbn=args.mlpbn)
-			target_network = resnet18(non_linear_head=True, mlpbn=args.mlpbn)
+			target_network = resnet18(non_linear_head=True, mlpbn=args.targetmlpbn)
 		elif args.network == 'resnet50':
 			network = resnet50(non_linear_head=True, mlpbn=args.mlpbn)
-			target_network = resnet50(non_linear_head=True, mlpbn=args.mlpbn)
+			target_network = resnet50(non_linear_head=True, mlpbn=args.targetmlpbn)
 		self.network = nn.DataParallel(network, device_ids=self.device_ids)
 		self.network.to(self.device)
 		self.target_network = nn.DataParallel(target_network, device_ids=self.device_ids)
@@ -153,6 +153,26 @@ class BYOL(object):
 			)
 		self.predictor = nn.DataParallel(self.predictor, device_ids=self.device_ids)
 		self.predictor.to(self.device)
+
+	def _update_param(self):
+		with torch.no_grad():
+			total_operation = 0
+			for online_param, target_param in zip(self.network.named_parameters(), self.target_network.named_parameters()):
+				if online_param[0] == target_param[0]:
+					target_param[1].data = target_param[1].data * self.m + online_param[1].data * (1. - self.m)
+					# print('update from {}->{}'.format(online_param[0], target_param[0]))
+					total_operation += 1
+
+			# transfer the last linear layer
+			last_i = 0
+			for online_param, target_param in zip(list(self.network.named_parameters())[::-1], list(self.target_network.named_parameters())[::-1]):
+				target_param[1].data = target_param[1].data * self.m + online_param[1].data * (1. - self.m)
+				# print('update from {}->{}'.format(online_param[0], target_param[0]))
+				total_operation += 1
+				last_i += 1
+				if last_i == 2:
+					break
+			assert total_operation == min( len(list(self.target_network.parameters())), len(list(self.network.parameters())) )
 
 	def update_param(self):
 		with torch.no_grad():
@@ -274,7 +294,10 @@ class BYOL(object):
 			self.optimizer.zero_grad()
 			loss.backward()
 			self.optimizer.step()
-			self.update_param()
+			if self.args.mlpbn == self.args.targetmlpbn:
+				self.update_param()
+			else:
+				self._update_param()
 
 			lr = self.optimizer.param_groups[0]['lr']
 			pbar.set_description("Epoch:{} [lr:{}]".format(self.current_epoch, lr))
@@ -337,6 +360,7 @@ def main():
 	parser.add_argument('--blur', action='store_true')
 	parser.add_argument('--cos', action='store_true')
 	parser.add_argument('--mlpbn', default=1, type=int)
+	parser.add_argument('--targetmlpbn', default=1, type=int)
 	parser.add_argument('--prebn', default=1, type=int)
 
 	parser.add_argument('--network', default='resnet18', type=str)

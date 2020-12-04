@@ -114,6 +114,7 @@ Due to the surprising effect of batch normalization, the batch size is also a ke
 
 |Batch Size|Results|
 |----|----|
+|1024|59.14|
 |512|62.74|
 |128|60.23|
 
