@@ -100,11 +100,11 @@ BYOL is hightly dependent on the batch normalization, we examine it with the fol
 |----|----|
 |111(Baseline)|62.74|
 |101(No MLP predictor BN)|62.66|
-|011(No BN1)|-|
+|011(No BN1)|58.18|
 |110(No BN3)|56.37|
 |010(No MLP projection BN)|50.67|
-|100(No BN2 and BN3)|-|
-|001(No BN1 and BN3)|-|
+|100(No BN2 and BN3)|2.7（collapse）|
+|001(No BN1 and BN2)|53.72|
 |000(No BN)|1.56(collapse)|
 
 Comparison of with or without MLPBN, using the above **Default Setting**, we visulaize the t-SNE, with MLPBN (left), without MLPBN(right).
