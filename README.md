@@ -51,28 +51,6 @@ The T-SNE visualization of features from **the last CONV** layer with **ResNet-1
 ---------------------
 <img src="img/cmp_embedding_conv_insd_byol_simclr_r18.png" alt="" align=center />
 
-### Ablation
-#### Effect of BatchNormalization
-
-BYOL is hightly dependent on the batch normalization, we examine it with the following settings: 
-
-1. take out the BN in MLP head projection.
-2. take out the BN in Backbone architechutre.
-3. take out the BN in predictor.
-
-**Default Setting**: Except for the above three variants, all other settings are identical: with BYOL aug+, ResNet-18. The default t-SNE is calculated on the output of the last convolutional layer.
-
-|Setting|Results|
-|----|----|
-|Baseline|62.74|
-|MLP projection without BN|50.67|
-
-Comparison of with or without MLPBN, using the above **Default Setting**, we visulaize the t-SNE, with MLPBN (left), without MLPBN(right).
-
-----------------------
-<img src="img/cmp_r18womlpbn_lastconv.png" alt="" align=center />
-----------------------
-
 
 ### CIFAR10 Results
 
@@ -101,6 +79,43 @@ The T-SNE visualization of features from **the last CONV** layer with **ResNet-1
 ----------------------
 <img src="img/cmp_embedding_cifar10.png" alt="" align=center />
 ----------------------
+
+
+
+
+
+### Ablation
+#### Effect of BatchNormalization
+
+BYOL is hightly dependent on the batch normalization, we examine it with the following settings: 
+
+1. take out the BN in MLP head projection.
+2. take out the BN in Backbone architechutre.
+3. take out the BN in predictor.
+
+**Default Setting**: Except for the above three variants, all other settings are identical: with BYOL aug+, ResNet-18. The default t-SNE is calculated on the output of the last convolutional layer.
+
+|Setting|Results|
+|----|----|
+|Baseline|62.74|
+|MLP projection without BN|50.67|
+|MLP predictor  without BN|62.66|
+|Both without BN|1.56(collapse)|
+
+Comparison of with or without MLPBN, using the above **Default Setting**, we visulaize the t-SNE, with MLPBN (left), without MLPBN(right).
+
+----------------------
+<img src="img/cmp_r18womlpbn_lastconv.png" alt="" align=center />
+----------------------
+
+#### Effect of Batch Size
+
+Due to the surprising effect of batch normalization, the batch size is also a key ingredient. The comparison is as follows(ResNet-18, cifar100):
+
+|Batch Size|Results|
+|----|----|
+|512|62.74|
+|128|60.23|
 
 
 
