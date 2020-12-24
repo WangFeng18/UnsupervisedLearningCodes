@@ -61,35 +61,12 @@ def get_linear_dataloader(args):
 						num_workers=args.n_workers)
 	return train_loader, val_loader
 
-def get_dataloader(args):
-	if args.blur:
-		train_transforms = transforms.Compose([
-			transforms.RandomResizedCrop(size=32, scale=(0.2,1.)),
-			transforms.RandomApply([
-					transforms.ColorJitter(0.4, 0.4, 0.4, 0.1)  # not strengthened
-			], p=0.8),
-			transforms.RandomGrayscale(p=0.2),
-			transforms.RandomApply([GaussianBlur([.1, 2.])], p=0.5),
-			# RandomBlur(),
-			transforms.RandomHorizontalFlip(),
-			transforms.ToTensor(),
-			transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
-		])
-	else:
-		train_transforms = transforms.Compose([
-			transforms.RandomResizedCrop(size=32, scale=(0.2,1.)),
-			transforms.ColorJitter(0.4, 0.4, 0.4, 0.4),
-			transforms.RandomGrayscale(p=0.2),
-			# RandomBlur(),
-			#transforms.RandomHorizontalFlip(),
-			transforms.ToTensor(),
-			transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
-		])
-
+def get_dataloader(args, train_transforms):
 	val_transforms = transforms.Compose([
 		transforms.ToTensor(),
 		transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
 	])
+	
 	train_dataset = CIFAR10Instance(root='./data', train=True, download=True, transform=train_transforms) if args.dataset == 'cifar10' else CIFAR100Instance(root='./data', train=True, download=True, transform=train_transforms)
 
 	val_dataset = CIFAR10Instance(root='./data', train=False, download=True, transform=val_transforms) if args.dataset == 'cifar10' else CIFAR100Instance(root='./data', train=False, download=True, transform=val_transforms)

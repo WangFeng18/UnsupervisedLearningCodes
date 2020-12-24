@@ -230,7 +230,7 @@ def main():
 		model = nn.DataParallel(model)
 		classifier = LinearClassifierResNet(args.layer, args.n_label, 'avg', 1, bottleneck=False)
 	elif args.model == 'resnet18_cifar':
-		model = resnet18_cifar()
+		model = resnet18_cifar(256, non_linear_head=True, mlpbn=True)
 		model = nn.DataParallel(model)
 		classifier = LinearClassifierResNet(args.layer, args.n_label, 'avg', 1, bottleneck=False)
 	elif args.model == 'resnet50_cifar':

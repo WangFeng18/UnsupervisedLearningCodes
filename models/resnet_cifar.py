@@ -69,7 +69,7 @@ class Bottleneck(nn.Module):
 
 
 class ResNet(nn.Module):
-	def __init__(self, block, num_blocks, low_dim=128, dropout=False, non_linear_head=False, mlpbn=False):
+	def __init__(self, block, num_blocks, low_dim=128, dropout=False, non_linear_head=False, mlpbn=False, bnaffine=True):
 		super(ResNet, self).__init__()
 		self.in_planes = 64
 		self.dropout = dropout
@@ -89,7 +89,7 @@ class ResNet(nn.Module):
 				logging.info('Using BatchNorm in MLP head projection')
 				self.linear = nn.Sequential(
 						nn.Linear(512 * block.expansion, 512 * block.expansion),
-						nn.BatchNorm1d(512 * block.expansion),
+						nn.BatchNorm1d(512 * block.expansion, affine=bnaffine),
 						nn.ReLU(inplace=True),
 						nn.Linear(512 * block.expansion, low_dim),
 				)
@@ -104,12 +104,27 @@ class ResNet(nn.Module):
 
 		if self.dropout:
 			self.dropout_layer = nn.Dropout(p=0.5)
+		
+		for m in self.modules():
+			if isinstance(m, nn.Conv2d):
+				nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+			elif isinstance(m, nn.Linear):
+				nn.init.xavier_uniform_(m.weight)
+				nn.init.constant_(m.bias, 0)
+			elif isinstance(m, (nn.BatchNorm2d, nn.GroupNorm)):
+				nn.init.constant_(m.weight, 1)
+				nn.init.constant_(m.bias, 0)
 		# self.linear = nn.Sequential(
 		# 	nn.Linear(512*block.expansion, 512),
 		# 	nn.Linear(512, low_dim),
 		
 		# )
 		# self.l2norm = Normalize(2)
+	def reinit_linear(self):
+		for m in self.modules():
+			if isinstance(m, nn.Linear):
+				nn.init.xavier_uniform_(m.weight)
+				nn.init.constant_(m.bias, 0)
 
 	def _make_layer(self, block, planes, num_blocks, stride):
 		strides = [stride] + [1]*(num_blocks-1)
@@ -161,14 +176,14 @@ class ResNet(nn.Module):
 	
 
 
-def ResNet18(low_dim=128, dropout=False, non_linear_head=False, mlpbn=False):
-	return ResNet(BasicBlock, [2,2,2,2], low_dim, dropout=dropout, non_linear_head=non_linear_head, mlpbn=mlpbn)
+def ResNet18(low_dim=128, dropout=False, non_linear_head=False, mlpbn=False, bnaffine=True):
+	return ResNet(BasicBlock, [2,2,2,2], low_dim, dropout=dropout, non_linear_head=non_linear_head, mlpbn=mlpbn, bnaffine=bnaffine)
 
 def ResNet34(low_dim=128):
 	return ResNet(BasicBlock, [3,4,6,3], low_dim)
 
-def ResNet50(low_dim=128, dropout=False, non_linear_head=False, mlpbn=False):
-	return ResNet(Bottleneck, [3,4,6,3], low_dim, dropout=dropout, non_linear_head=non_linear_head, mlpbn=mlpbn)
+def ResNet50(low_dim=128, dropout=False, non_linear_head=False, mlpbn=False, bnaffine=True):
+	return ResNet(Bottleneck, [3,4,6,3], low_dim, dropout=dropout, non_linear_head=non_linear_head, mlpbn=mlpbn, bnaffine=bnaffine)
 
 def ResNet101(low_dim=128):
 	return ResNet(Bottleneck, [3,4,23,3], low_dim)

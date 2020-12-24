@@ -30,6 +30,9 @@ For BYOL, I have only tested a simple set of hyper-parameters: using a fixed mom
 |Res18|59.96|62.74|60.78|56.44|
 |Res50|64.64|65.51|--|62.74|
 
+CIFAR100 is not very stable, linear results with seven tries with same hyper-parameters (with blur):
+63.37, 62,82, 63.53, 63.32, 63.14, 63.53, 63.75   
+
 #### BYOL Loss Curve
 -----------------------------
 
@@ -106,6 +109,13 @@ BYOL is hightly dependent on the batch normalization, we examine it with the fol
 |100(No BN2 and BN3)|2.7（collapse）|
 |001(No BN1 and BN2)|53.72|
 |000(No BN)|1.56(collapse)|
+
+I guess that BN3 is important, and I guess there only require one BN between BN1 and BN2. From the above results, we can see a sutble changes without BN1: 
+BN1+BN2+BN3 = 62.74, while BN2+BN3 = 58.18.
+Why it decreases? Because the BN3 has the affine parameter while BN1 is cancled, so we can not update the parameter of BN3 accurately. The affine parameters of BN3 is always the initialization parameters, which degenerate the performance a little.
+
+So I have conducted another set of experiments, where the affine parameters are disabled, in this way, the BN3 can work accurately.
+
 
 Comparison of with or without MLPBN, using the above **Default Setting**, we visulaize the t-SNE, with MLPBN (left), without MLPBN(right).
 

@@ -23,7 +23,6 @@ import objective
 import logging
 import torch.distributions.beta as beta
 from models.wideresnet import WideResNetInstance
-import augmentation
 
 class Recording(object):
 	def __init__(self, names):
@@ -65,7 +64,6 @@ class BYOL(object):
 	def __init__(self, args):
 		cudnn.benchmark = True
 		self.args = args
-		self.m = 0.996
 		self.create_experiment()
 		self.get_logger()
 		self.device_ids = list(map(lambda x: int(x), args.gpus.split(',')))
@@ -110,11 +108,7 @@ class BYOL(object):
 	def get_dataloader(self):
 		args = self.args
 		if args.dataset.startswith('cifar'):
-			if args.rotation:
-				train_transforms = augmentation.get_cifar_train_augmentations(type='plusrotation')
-			else:
-				train_transforms = augmentation.get_cifar_train_augmentations(type='normal')
-			train_loader, val_loader, train_ordered_labels, train_dataset, val_dataset = cifar.get_dataloader(args, train_transforms) 
+			train_loader, val_loader, train_ordered_labels, train_dataset, val_dataset = cifar.get_dataloader(args) 
 		elif args.dataset.startswith('imagenet'):
 			train_loader, val_loader, train_ordered_labels, train_dataset, val_dataset = imagenet.get_instance_dataloader(args)
 		elif args.dataset == 'svhn':
@@ -128,78 +122,15 @@ class BYOL(object):
 	def get_network(self):
 		args = self.args
 		if args.network == 'resnet18_cifar':
-			network = ResNet18_cifar(256, dropout=args.dropout, non_linear_head=True, mlpbn=args.mlpbn, bnaffine=self.args.bnaffine)
-			target_network = ResNet18_cifar(256, dropout=args.dropout, non_linear_head=True, mlpbn=args.targetmlpbn, bnaffine=self.args.bnaffine)
-			noise_network = ResNet18_cifar(256, dropout=args.dropout, non_linear_head=True, mlpbn=args.targetmlpbn, bnaffine=self.args.bnaffine)
+			network = ResNet18_cifar(128, dropout=args.dropout, non_linear_head=True, mlpbn=args.mlpbn)
 		elif args.network == 'resnet50_cifar':
-			network = ResNet50_cifar(256, dropout=args.dropout, mlpbn=args.mlpbn, non_linear_head=True, bnaffine=self.args.bnaffine)
-			target_network = ResNet50_cifar(256, dropout=args.dropout, mlpbn=args.targetmlpbn, non_linear_head=True, bnaffine=self.args.bnaffine)
+			network = ResNet50_cifar(128, dropout=args.dropout, mlpbn=args.mlpbn, non_linear_head=True)
 		elif args.network == 'resnet18':
-			network = resnet18(non_linear_head=True, mlpbn=args.mlpbn, bnaffine=self.args.bnaffine)
-			target_network = resnet18(non_linear_head=True, mlpbn=args.targetmlpbn, bnaffine=self.args.bnaffine)
+			network = resnet18(non_linear_head=True, mlpbn=args.mlpbn)
 		elif args.network == 'resnet50':
-			network = resnet50(non_linear_head=True, mlpbn=args.mlpbn, bnaffine=self.args.bnaffine)
-			target_network = resnet50(non_linear_head=True, mlpbn=args.targetmlpbn, bnaffine=self.args.bnaffine)
+			network = resnet50(non_linear_head=True, mlpbn=args.mlpbn)
 		self.network = nn.DataParallel(network, device_ids=self.device_ids)
 		self.network.to(self.device)
-		self.target_network = nn.DataParallel(target_network, device_ids=self.device_ids)
-		self.target_network.to(self.device)
-		self.noise_network = nn.DataParallel(noise_network, device_ids=self.device_ids)
-		self.noise_network.to(self.device)
-		if self.args.prebn:
-			self.predictor = nn.Sequential(
-							nn.Linear(256, 256),
-							nn.BatchNorm1d(256, affine=self.args.bnaffine),
-							nn.ReLU(inplace=True),
-							nn.Linear(256, 256),
-			)
-		else:
-			self.predictor = nn.Sequential(
-							nn.Linear(256, 256),
-							nn.ReLU(inplace=True),
-							nn.Linear(256, 256),
-			)
-		self.predictor = nn.DataParallel(self.predictor, device_ids=self.device_ids)
-		self.predictor.to(self.device)
-
-	def _update_param(self):
-		with torch.no_grad():
-			total_operation = 0
-			for online_param, target_param in zip(self.network.named_parameters(), self.target_network.named_parameters()):
-				if online_param[0] == target_param[0]:
-					target_param[1].data = target_param[1].data * self.m + online_param[1].data * (1. - self.m)
-					# print('update from {}->{}'.format(online_param[0], target_param[0]))
-					total_operation += 1
-
-			# transfer the last linear layer
-			last_i = 0
-			for online_param, target_param in zip(list(self.network.named_parameters())[::-1], list(self.target_network.named_parameters())[::-1]):
-				target_param[1].data = target_param[1].data * self.m + online_param[1].data * (1. - self.m)
-				# print('update from {}->{}'.format(online_param[0], target_param[0]))
-				total_operation += 1
-				last_i += 1
-				if last_i == 2:
-					break
-			assert total_operation == min( len(list(self.target_network.parameters())), len(list(self.network.parameters())) )
-
-	def update_param(self):
-		with torch.no_grad():
-			for online_param, target_param in zip(self.network.parameters(), self.target_network.parameters()):
-				target_param.data = target_param.data * self.m + online_param.data * (1. - self.m)
-	
-	def add_noise(self):
-		with torch.no_grad():
-			for target_param, noise_param in zip(self.target_network.parameters(), self.noise_network.parameters()):
-				magnitude = target_param.data.abs().mean()
-				torch.nn.init.normal_(noise_param, mean=0.0, std=max(magnitude*self.args.std, 1e-7))
-
-			for target_param, noise_param in zip(self.target_network.parameters(), self.noise_network.parameters()):
-				target_param.data = target_param.data + noise_param.data
-
-	def remove_noise(self):
-		with torch.no_grad():
-			for target_param, noise_param in zip(self.target_network.parameters(), self.noise_network.parameters()):
-				target_param.data = target_param.data - noise_param.data
 
 	def get_optimizer(self):
 		args = self.args
@@ -210,7 +141,7 @@ class BYOL(object):
 			parameters = self.network.parameters()
 
 		self.optimizer = torch.optim.SGD(
-			list(parameters) + list(self.predictor.parameters()),
+			list(parameters),
 			lr=args.lr,
 			momentum=0.9,
 			weight_decay=args.weight_decay,
@@ -222,8 +153,6 @@ class BYOL(object):
 		logging.info('resume from {}'.format(args.resume_path))
 		checkpoint = torch.load(args.resume_path)
 		self.network.load_state_dict(checkpoint['state_dict'])
-		self.predictor.load_state_dict(checkpoint['predictor_state_dict'])
-		self.target_network.load_state_dict(checkpoint['target_state_dict'])
 		self.optimizer.load_state_dict(checkpoint['optimizer'])
 		self.start_epoch = checkpoint['epoch']
 
@@ -244,8 +173,6 @@ class BYOL(object):
 						'epoch': i_epoch + 1,
 						'state_dict': self.network.state_dict(),
 						'optimizer': self.optimizer.state_dict(),
-						'target_state_dict': self.target_network.state_dict(),
-						'predictor_state_dict': self.predictor.state_dict(),
 					}
 					torch.save(checkpoint, os.path.join(args.exp, 'models', save_name))
 
@@ -298,32 +225,20 @@ class BYOL(object):
 			img1 = data[0].to(self.device)
 			img2 = data[1].to(self.device)
 
-			featA1 = self.network(img1)
-			if self.args.noise:
-				self.add_noise()
-			featA2 = l2_normalize(self.target_network(img2)).to(self.device)
+			feat1 = l2_normalize(self.network(img1))
+			feat2 = l2_normalize(self.network(img2))
+			sims = torch.matmul(feat1, torch.transpose(feat2, 1, 0))
+			# pos_sims = (feat1 * feat2).sum(dim=1)
+			double_sims = (sims + torch.transpose(sims, 1, 0)) - torch.diagflat(torch.diagonal(sims))
 
-			predicted_featA2 = l2_normalize(self.predictor(featA1)).to(self.device)
-			loss1 = ((predicted_featA2 - featA2)**2).sum(dim=1).mean()
-
-			featB1 = self.network(img2)
-			featB2 = l2_normalize(self.target_network(img1)).to(self.device)
-			if self.args.noise:
-				self.remove_noise()
-			predicted_featB2 = l2_normalize(self.predictor(featB1)).to(self.device)
-			loss2 = ((predicted_featB2 - featB2)**2).sum(dim=1).mean()
-
-			loss = loss1 + loss2
+			label = torch.arange(0,img1.size(0), dtype=torch.long).to(self.device)
+			loss = torch.nn.CrossEntropyLoss()(double_sims/self.args.t, label)
 
 			losses.add(loss.item())
 
 			self.optimizer.zero_grad()
 			loss.backward()
 			self.optimizer.step()
-			if self.args.mlpbn == self.args.targetmlpbn:
-				self.update_param()
-			else:
-				self._update_param()
 
 			lr = self.optimizer.param_groups[0]['lr']
 			pbar.set_description("Epoch:{} [lr:{}]".format(self.current_epoch, lr))
@@ -383,14 +298,10 @@ def main():
 	parser.add_argument('--weight_decay', default=5e-4, type=float)
 	parser.add_argument('--n_workers', default=32, type=int)
 	parser.add_argument('--dropout', action='store_true')
-	parser.add_argument('--rotation', action='store_true')
+	parser.add_argument('--blur', action='store_true')
 	parser.add_argument('--cos', action='store_true')
 	parser.add_argument('--mlpbn', default=1, type=int)
-	parser.add_argument('--targetmlpbn', default=1, type=int)
-	parser.add_argument('--prebn', default=1, type=int)
-	parser.add_argument('--bnaffine', default=1, type=int)
-	parser.add_argument('--std', default=0.01, type=float)
-	parser.add_argument('--noise', default=1, type=int)
+	parser.add_argument('--t', default=0.1, type=float)
 
 	parser.add_argument('--network', default='resnet18', type=str)
 	parser.add_argument('--record_prob', default=0.1, type=float)
